@@ -1,0 +1,8 @@
+{
+  "name": "Rover Trading",
+  "description": "Learn technical analysis, trading psychology, and market strategies through structured live trading education.",
+  "permissions": [],
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

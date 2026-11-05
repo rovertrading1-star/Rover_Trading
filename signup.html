@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Create your student account to join the Rover Trading Academy program.">
+  <meta property="og:title" content="Create Account | Rover Trading">
+  <meta property="og:description" content="Create your student account to join the Rover Trading Academy program.">
+  <title>Create Account | Rover Trading Academy</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%23a3e635' rx='20' width='100' height='100'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='black' font-family='Arial' font-weight='bold'>R</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #070c0b;
+      --card: #101917;
+      --input: #15211d;
+      --border: #27342e;
+      --green: #a3e635;
+      --green-glow: rgba(163,230,53,0.3);
+      --white: #f6faf7;
+      --muted: #94a69a;
+      --red: #ff7777;
+      --warn: #f59e0b;
+      --ok: #22c55e;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      background: var(--bg);
+      color: var(--white);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+      line-height: 1.6;
+      display: flex;
+      flex-direction: column;
+    }
+    a { color: inherit; text-decoration: none; }
+    .nav {
+      height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 40px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(7,12,11,0.9);
+      backdrop-filter: blur(12px);
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 800;
+      font-size: 18px;
+    }
+    .logo-badge {
+      width: 38px;
+      height: 38px;
+      background: linear-gradient(135deg, var(--green), #65a30d);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #000;
+      font-weight: 800;
+      box-shadow: 0 0 15px var(--green-glow);
+    }
+    .logo span { color: var(--green); }
+    .main-wrap {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 20px;
+    }
+    .auth-box {
+      width: 100%;
+      max-width: 1060px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      display: flex;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+    }
+    .auth-left {
+      flex: 1;
+      background: linear-gradient(135deg, #10211a, #0c1714 50%, #070c0b);
+      padding: 60px 50px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      border-right: 1px solid var(--border);
+    }
+    .badge-program {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      background: rgba(163,230,53,0.1);
+      border: 1px solid rgba(163,230,53,0.25);
+      border-radius: 50px;
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--green);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      width: fit-content;
+      margin-bottom: 24px;
+    }
+    .auth-left h1 {
+      font-family: 'Manrope', sans-serif;
+      font-size: 38px;
+      line-height: 1.2;
+      font-weight: 800;
+      margin-bottom: 16px;
+    }
+    .auth-left p { color: var(--muted); font-size: 14px; margin-bottom: 30px; }
+    .feature-list { display: flex; flex-direction: column; gap: 14px; }
+    .feature-item { display: flex; align-items: center; gap: 12px; font-size: 13px; color: var(--muted); }
+    .feature-icon {
+      width: 28px;
+      height: 28px;
+      background: #173d28;
+      color: var(--green);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+    }
+    .auth-right {
+      flex: 1.2;
+      padding: 50px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .auth-head { margin-bottom: 24px; }
+    .auth-head h2 { font-family: 'Manrope', sans-serif; font-size: 28px; font-weight: 800; margin-bottom: 6px; }
+    .auth-head p { font-size: 13px; color: var(--muted); }
+    .auth-head a { color: var(--green); font-weight: 700; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .form-group { margin-bottom: 16px; }
+    .form-label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; letter-spacing: 0.5px; }
+    .input-wrap { position: relative; }
+    .input-box {
+      width: 100%;
+      background: var(--input);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px 12px 38px;
+      color: #fff;
+      font-size: 13px;
+      outline: none;
+      font-family: inherit;
+      transition: 0.25s;
+    }
+    .input-box:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(163,230,53,0.1); }
+    .input-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 13px; }
+    .eye-btn {
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+    }
+    .pw-meter { display: flex; gap: 4px; height: 4px; margin-top: 6px; }
+    .pw-bar { flex: 1; border-radius: 2px; background: var(--border); transition: 0.3s; }
+    .pw-bar.weak { background: var(--red); }
+    .pw-bar.fair { background: var(--warn); }
+    .pw-bar.good { background: #eab308; }
+    .pw-bar.strong { background: var(--ok); }
+    .pw-text { font-size: 10px; color: var(--muted); margin-top: 4px; display: flex; justify-content: space-between; }
+    .checkbox-wrap { display: flex; align-items: center; gap: 8px; cursor: pointer; color: var(--muted); font-size: 12px; margin: 16px 0; }
+    .btn-submit {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, var(--green), #84cc16);
+      border: none;
+      border-radius: 12px;
+      color: #000;
+      font-weight: 800;
+      font-size: 14px;
+      cursor: pointer;
+      box-shadow: 0 0 20px var(--green-glow);
+      transition: 0.2s;
+    }
+    .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 0 30px var(--green-glow); }
+    .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .btn-secondary {
+      display: block;
+      text-align: center;
+      width: 100%;
+      padding: 12px;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+      margin-top: 14px;
+      transition: 0.2s;
+    }
+    .btn-secondary:hover { border-color: var(--green); color: var(--green); }
+    @media(max-width:850px) {
+      .auth-box { flex-direction: column; }
+      .grid-2 { grid-template-columns: 1fr; }
+      .auth-left { padding: 40px 24px; }
+      .auth-right { padding: 40px 24px; }
+      .nav { padding: 0 20px; }
+    }
+  </style>
+
+  <!-- Firebase Compat SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="firebase.js"></script>
+</head>
+<body>
+  <div id="toastC"></div>
+
+  <nav class="nav">
+    <a href="index.html" class="logo">
+      <div class="logo-badge">R</div>
+      <div>ROVER <span>TRADING</span></div>
+    </a>
+    <div style="display:flex;gap:12px;align-items:center;">
+      <a href="index.html" style="font-size:13px;color:var(--muted);margin-right:8px;">← Back to Home</a>
+      <a href="login.html" style="font-size:13px;font-weight:700;padding:8px 16px;border:1px solid var(--border);color:#fff;border-radius:8px;">Login</a>
+    </div>
+  </nav>
+
+  <main class="main-wrap">
+    <div class="auth-box">
+      <!-- Left Column -->
+      <div class="auth-left">
+        <div class="badge-program">Structured Live Trading Education</div>
+        <h1>Start your trading journey <span style="color:var(--green)">today.</span></h1>
+        <p>Join the Rover Trading community and learn to read the market, one candle at a time. Register to receive your official RT student account.</p>
+        <div class="feature-list">
+          <div class="feature-item">
+            <div class="feature-icon">✓</div>
+            <span>Live Zoom trading education sessions</span>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon">✓</div>
+            <span>Price action & technical candlestick analysis</span>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon">✓</div>
+            <span>Build your own systematic trading plan</span>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon">✓</div>
+            <span>Community mentorship & weekly briefings</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Form -->
+      <div class="auth-right">
+        <div class="auth-head">
+          <h2>Create Account</h2>
+          <p>Already have an account? <a href="login.html">Sign in</a></p>
+        </div>
+
+        <form id="signupForm">
+          <div class="grid-2">
+            <div class="form-group">
+              <label class="form-label" for="firstName">First Name</label>
+              <div class="input-wrap">
+                <span class="input-icon">👤</span>
+                <input type="text" id="firstName" class="input-box" placeholder="John" required>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="lastName">Surname</label>
+              <div class="input-wrap">
+                <span class="input-icon">👤</span>
+                <input type="text" id="lastName" class="input-box" placeholder="Doe" required>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="email">Email Address</label>
+            <div class="input-wrap">
+              <span class="input-icon">✉</span>
+              <input type="email" id="email" class="input-box" placeholder="john@example.com" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="cell">Cell Number</label>
+            <div class="input-wrap">
+              <span class="input-icon">📞</span>
+              <input type="tel" id="cell" class="input-box" placeholder="+27 81 234 5678" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="password">Password</label>
+            <div class="input-wrap">
+              <span class="input-icon">🔒</span>
+              <input type="password" id="password" class="input-box" placeholder="Create a password (min 8 chars)" required>
+              <button type="button" class="eye-btn" onclick="togglePw('password', this)">👁</button>
+            </div>
+            <div class="pw-meter">
+              <div class="pw-bar" id="b1"></div>
+              <div class="pw-bar" id="b2"></div>
+              <div class="pw-bar" id="b3"></div>
+              <div class="pw-bar" id="b4"></div>
+            </div>
+            <div class="pw-text">
+              <span>Strength:</span>
+              <span id="pwLabel" style="font-weight:700">None</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="confirmPassword">Confirm Password</label>
+            <div class="input-wrap">
+              <span class="input-icon">🔒</span>
+              <input type="password" id="confirmPassword" class="input-box" placeholder="Re-enter your password" required>
+            </div>
+          </div>
+
+          <label class="checkbox-wrap">
+            <input type="checkbox" id="agreeTerms" required>
+            <span>I agree to the Terms & Conditions and academy code of conduct</span>
+          </label>
+
+          <button type="submit" class="btn-submit" id="submitBtn">Create Account ↗</button>
+          <a href="login.html" class="btn-secondary">Sign in to existing account →</a>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    function togglePw(id, btn) {
+      const el = document.getElementById(id);
+      if (el.type === 'password') {
+        el.type = 'text';
+        btn.textContent = '🙈';
+      } else {
+        el.type = 'password';
+        btn.textContent = '👁';
+      }
+    }
+
+    // Password Strength Meter
+    document.getElementById('password').addEventListener('input', function() {
+      const pw = this.value;
+      let score = 0;
+      if (pw.length >= 8) score++;
+      if (/[a-z]/.test(pw) && /[A-Z]/.test(pw)) score++;
+      if (/[0-9]/.test(pw)) score++;
+      if (/[^a-zA-Z0-9]/.test(pw)) score++;
+
+      const bars = [document.getElementById('b1'), document.getElementById('b2'), document.getElementById('b3'), document.getElementById('b4')];
+      const labels = ['None', 'Weak', 'Fair', 'Good', 'Strong'];
+      const classes = ['', 'weak', 'fair', 'good', 'strong'];
+
+      bars.forEach((b, i) => {
+        b.className = 'pw-bar';
+        if (i < score) b.classList.add(classes[score]);
+      });
+
+      const lbl = document.getElementById('pwLabel');
+      lbl.textContent = labels[score];
+      lbl.style.color = score <= 1 ? '#ff7777' : score === 2 ? '#f59e0b' : '#a3e635';
+    });
+
+    document.getElementById('signupForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const fn = document.getElementById('firstName').value.trim();
+      const ln = document.getElementById('lastName').value.trim();
+      const em = document.getElementById('email').value.trim().toLowerCase();
+      const cl = document.getElementById('cell').value.trim();
+      const pw = document.getElementById('password').value;
+      const cpw = document.getElementById('confirmPassword').value;
+      const ag = document.getElementById('agreeTerms').checked;
+      const btn = document.getElementById('submitBtn');
+
+      if (!fn || !ln) { toast('warning', 'Missing Name', 'Please enter your first name and surname.'); return; }
+      if (!em || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) { toast('warning', 'Invalid Email', 'Please enter a valid email.'); return; }
+      if (pw.length < 8) { toast('warning', 'Weak Password', 'Password must be at least 8 characters long.'); return; }
+      if (pw !== cpw) { toast('error', 'Mismatch', 'Passwords do not match.'); return; }
+      if (!ag) { toast('warning', 'Terms Required', 'Please accept the terms to proceed.'); return; }
+
+      btn.disabled = true;
+      btn.textContent = 'Creating account...';
+
+      // Generate next account number
+      const accNum = window.RoverStore.getNextAccountNumber();
+      let uid = 'usr_' + Date.now();
+
+      // 1. Attempt Firebase Auth & Firestore
+      if (typeof auth !== 'undefined' && auth.createUserWithEmailAndPassword) {
+        try {
+          const cred = await auth.createUserWithEmailAndPassword(em, pw);
+          uid = cred.user.uid;
+          if (typeof db !== 'undefined' && db.collection) {
+            await db.collection('users').doc(uid).set({
+              accountNumber: accNum,
+              firstName: fn,
+              lastName: ln,
+              email: em,
+              cellNumber: cl,
+              paymentStatus: 'unpaid',
+              role: 'student',
+              createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+          }
+        } catch (err) {
+          console.warn('Firebase registration notice:', err.message);
+        }
+      }
+
+      // 2. Save in RoverStore
+      const newUser = {
+        id: uid,
+        accountNumber: accNum,
+        firstName: fn,
+        lastName: ln,
+        email: em,
+        cellNumber: cl,
+        paymentStatus: 'unpaid',
+        role: (em === 'admin@rovertrading.com' || em === 'loatelethabo@gmail.com') ? 'admin' : 'student',
+        createdAt: new Date().toISOString()
+      };
+
+      const users = window.RoverStore.getUsers();
+      users.unshift(newUser);
+      window.RoverStore.saveUsers(users);
+      window.RoverStore.setCurrentUser(newUser);
+
+      toast('success', 'Account Created!', 'Your account number is ' + accNum + '. Redirecting to your dashboard...');
+
+      setTimeout(() => {
+        window.location.href = 'dashboard.html';
+      }, 1200);
+    });
+  </script>
+</body>
+</html>

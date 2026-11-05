@@ -1,0 +1,105 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net (Pillar 1)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Hardened Primitives
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Bootstrapped Admin check
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'loatelethabo@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    // Entity Validation: User
+    function isValidUser(data) {
+      return data.keys().hasAll(['accountNumber', 'firstName', 'lastName', 'email', 'paymentStatus', 'role']) &&
+             data.accountNumber is string && data.accountNumber.size() <= 16 &&
+             data.firstName is string && data.firstName.size() > 0 && data.firstName.size() <= 60 &&
+             data.lastName is string && data.lastName.size() > 0 && data.lastName.size() <= 60 &&
+             data.email is string && data.email.size() > 3 && data.email.size() <= 120 &&
+             (data.paymentStatus == 'paid' || data.paymentStatus == 'unpaid') &&
+             (data.role == 'student' || data.role == 'admin');
+    }
+
+    // Entity Validation: Review
+    function isValidReview(data) {
+      return data.keys().hasAll(['name', 'course', 'rating', 'text']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 60 &&
+             data.course is string && data.course.size() <= 100 &&
+             data.rating is number && data.rating >= 1 && data.rating <= 5 &&
+             data.text is string && data.text.size() > 0 && data.text.size() <= 600 &&
+             (!('hidden' in data) || data.hidden is bool) &&
+             (!('status' in data) || (data.status in ['visible', 'hidden', 'flagged'])) &&
+             (!('moderationReason' in data) || (data.moderationReason is string && data.moderationReason.size() <= 200));
+    }
+
+    // Entity Validation: Enquiry
+    function isValidEnquiry(data) {
+      return data.keys().hasAll(['fullName', 'email', 'contactNumber', 'course']) &&
+             data.fullName is string && data.fullName.size() > 0 && data.fullName.size() <= 100 &&
+             data.email is string && data.email.size() > 3 && data.email.size() <= 120 &&
+             data.contactNumber is string && data.contactNumber.size() <= 30 &&
+             data.course is string && data.course.size() <= 100;
+    }
+
+    // Users Collection (PII Isolated)
+    match /users/{userId} {
+      allow get: if isValidId(userId) && (isAdmin() || (isSignedIn() && request.auth.uid == userId));
+      allow list: if isAdmin();
+      allow create: if isValidId(userId) && isSignedIn() && request.auth.uid == userId &&
+                      isValidUser(incoming()) &&
+                      (incoming().role == 'student' || isAdmin()) &&
+                      (incoming().paymentStatus == 'unpaid' || isAdmin());
+      allow update: if isValidId(userId) && isSignedIn() && (
+        isAdmin() ||
+        (request.auth.uid == userId &&
+         isValidUser(incoming()) &&
+         incoming().accountNumber == existing().accountNumber &&
+         incoming().paymentStatus == existing().paymentStatus &&
+         incoming().role == existing().role)
+      );
+      allow delete: if isValidId(userId) && isAdmin();
+    }
+
+    // Admins Collection
+    match /admins/{adminId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // Reviews Collection (Public read, verified write)
+    match /reviews/{reviewId} {
+      allow read: if true;
+      allow create: if isValidId(reviewId) && isValidReview(incoming());
+      allow update, delete: if isValidId(reviewId) && isAdmin();
+    }
+
+    // Enquiries Collection (Public write, Admin read/manage)
+    match /enquiries/{enquiryId} {
+      allow create: if isValidId(enquiryId) && isValidEnquiry(incoming());
+      allow read, update, delete: if isValidId(enquiryId) && isAdmin();
+    }
+  }
+}

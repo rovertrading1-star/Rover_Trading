@@ -1,0 +1,142 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Student or Admin member profile for Rover Trading",
+      "type": "object",
+      "properties": {
+        "accountNumber": {
+          "type": "string",
+          "description": "Unique student identifier like RT10001",
+          "maxLength": 16
+        },
+        "firstName": {
+          "type": "string",
+          "description": "First name of member",
+          "maxLength": 60
+        },
+        "lastName": {
+          "type": "string",
+          "description": "Surname of member",
+          "maxLength": 60
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address of member",
+          "maxLength": 120
+        },
+        "cellNumber": {
+          "type": "string",
+          "description": "Contact telephone number",
+          "maxLength": 30
+        },
+        "paymentStatus": {
+          "type": "string",
+          "description": "Payment and enrollment status (paid or unpaid)",
+          "enum": ["paid", "unpaid"]
+        },
+        "role": {
+          "type": "string",
+          "description": "User permission role",
+          "enum": ["student", "admin"]
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO timestamp or server timestamp when account was created"
+        }
+      },
+      "required": ["accountNumber", "firstName", "lastName", "email", "paymentStatus", "role"]
+    },
+    "Review": {
+      "title": "Review",
+      "description": "Verified student feedback on the course",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Student name",
+          "maxLength": 60
+        },
+        "course": {
+          "type": "string",
+          "description": "Completed course title",
+          "maxLength": 100
+        },
+        "rating": {
+          "type": "number",
+          "description": "Rating out of 5 stars"
+        },
+        "text": {
+          "type": "string",
+          "description": "Review testimonial content",
+          "maxLength": 600
+        },
+        "hidden": {
+          "type": "boolean",
+          "description": "Whether the comment is hidden from public display"
+        },
+        "status": {
+          "type": "string",
+          "description": "Moderation status (visible, hidden, flagged)",
+          "enum": ["visible", "hidden", "flagged"]
+        },
+        "moderationReason": {
+          "type": "string",
+          "description": "Reason for moderation or inappropriate content flag",
+          "maxLength": 200
+        },
+        "date": {
+          "type": "string",
+          "description": "Timestamp when review was created"
+        }
+      },
+      "required": ["name", "course", "rating", "text"]
+    },
+    "Enquiry": {
+      "title": "Enquiry",
+      "description": "Course enrollment inquiry from prospective students",
+      "type": "object",
+      "properties": {
+        "fullName": {
+          "type": "string",
+          "description": "Prospective student full name",
+          "maxLength": 100
+        },
+        "email": {
+          "type": "string",
+          "description": "Contact email address",
+          "maxLength": 120
+        },
+        "contactNumber": {
+          "type": "string",
+          "description": "Contact phone number",
+          "maxLength": 30
+        },
+        "course": {
+          "type": "string",
+          "description": "Preferred course selection",
+          "maxLength": 100
+        },
+        "date": {
+          "type": "string",
+          "description": "Timestamp when enquiry was created"
+        }
+      },
+      "required": ["fullName", "email", "contactNumber", "course"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Member profile documents keyed by Firebase Auth UID"
+    },
+    "/reviews/{reviewId}": {
+      "schema": "Review",
+      "description": "Published student reviews"
+    },
+    "/enquiries/{enquiryId}": {
+      "schema": "Enquiry",
+      "description": "Prospective student enrollment enquiries"
+    }
+  }
+}
