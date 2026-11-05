@@ -427,33 +427,38 @@
       const btn = document.getElementById('submitBtn');
 
       btn.disabled = true;
-      btn.textContent = 'Checking cloud records...';
+      btn.textContent = 'Authenticating...';
 
       let matched = null;
 
-      // 1. Direct query to Firestore Cloud database instance
-      if (typeof db !== 'undefined' && db.collection) {
+      // 1. Instant check in local cache (takes 0ms for active/returning users)
+      const localUsers = window.RoverStore.getUsers();
+      matched = localUsers.find(u => u.email && u.email.toLowerCase() === em);
+
+      // 2. If not found in local cache (e.g. logging in from a new device), query Firestore Cloud
+      if (!matched && typeof db !== 'undefined' && db.collection) {
+        btn.textContent = 'Checking cloud records...';
         try {
-          const snap = await db.collection('users').where('email', '==', em).get();
-          if (!snap.empty) {
+          const queryPromise = db.collection('users').where('email', '==', em).get();
+          const snap = await Promise.race([
+            queryPromise,
+            new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 2500))
+          ]);
+          if (snap && !snap.empty) {
             matched = { id: snap.docs[0].id, ...snap.docs[0].data() };
             console.log('User found in Firestore cloud:', matched.id);
+            localUsers.unshift(matched);
+            window.RoverStore.saveUsers(localUsers);
           }
         } catch (err) {
           console.warn('Firestore cloud user search notice:', err.message);
         }
       }
 
-      // 2. If not found, sync full cloud users list
+      // 3. Fallback to full sync if needed
       if (!matched && window.RoverStore && window.RoverStore.syncUsersFromFirestore) {
         const cloudUsers = await window.RoverStore.syncUsersFromFirestore();
         matched = cloudUsers.find(u => u.email && u.email.toLowerCase() === em);
-      }
-
-      // 3. Fallback to local store
-      if (!matched) {
-        const localUsers = window.RoverStore.getUsers();
-        matched = localUsers.find(u => u.email && u.email.toLowerCase() === em);
       }
 
       if (!matched) {
@@ -482,7 +487,7 @@
         } else {
           window.location.href = 'dashboard.html';
         }
-      }, 700);
+      }, 350);
     });
   </script>
 </body>

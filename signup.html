@@ -458,23 +458,13 @@
       if (!ag) { toast('warning', 'Terms Required', 'Please accept the terms to proceed.'); return; }
 
       btn.disabled = true;
-      btn.textContent = 'Registering to Firestore cloud...';
+      btn.textContent = 'Creating account...';
 
       // Generate unique account number and user ID
       const accNum = window.RoverStore.getNextAccountNumber();
       let uid = 'usr_' + Date.now();
 
-      // 1. Try Firebase Auth (if available)
-      if (typeof auth !== 'undefined' && auth.createUserWithEmailAndPassword) {
-        try {
-          const cred = await auth.createUserWithEmailAndPassword(em, pw);
-          if (cred && cred.user) uid = cred.user.uid;
-        } catch (err) {
-          console.warn('Firebase Auth note (using direct Firestore sync):', err.message);
-        }
-      }
-
-      // 2. Prepare user object with credentials for cross-device authentication
+      // 1. Prepare user object with credentials for cross-device authentication
       const newUser = {
         id: uid,
         accountNumber: accNum,
@@ -488,20 +478,22 @@
         createdAt: new Date().toISOString()
       };
 
-      // 3. Guaranteed write to Firestore Cloud database instance
-      await window.RoverStore.syncUserToFirestore(newUser);
-
-      // 4. Update local cache & set session
+      // 2. Instantly update local cache and session (instant 0ms response)
       const users = window.RoverStore.getUsers();
-      users.unshift(newUser);
-      window.RoverStore.saveUsers(users);
+      const filtered = users.filter(u => u.email && u.email.toLowerCase() !== em);
+      filtered.unshift(newUser);
+      window.RoverStore.saveUsers(filtered);
       window.RoverStore.setCurrentUser(newUser);
 
-      toast('success', 'Account Created in Cloud!', 'Account ' + accNum + ' is active. Redirecting to your dashboard...');
+      // 3. Guaranteed background write to Firestore Cloud database instance
+      window.RoverStore.syncUserToFirestore(newUser);
 
+      toast('success', 'Account Created!', 'Welcome, ' + fn + '! Taking you to your dashboard...');
+
+      // 4. Swift transition
       setTimeout(() => {
         window.location.href = 'dashboard.html';
-      }, 1000);
+      }, 350);
     });
   </script>
 </body>

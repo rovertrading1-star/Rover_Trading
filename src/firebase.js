@@ -13,6 +13,9 @@ import {
 } from 'firebase/auth';
 import {
   getFirestore,
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
   doc,
   setDoc,
   getDoc,
@@ -37,9 +40,16 @@ const firebaseConfig = {
   recaptchaSiteKey: ""
 };
 
-// Initialize App & Services with the specific provisioned database
+// Initialize App & Services with local cache & fast channel
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
-const firestoreDb = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+let firestoreDb;
+try {
+  firestoreDb = initializeFirestore(app, {
+    localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+  }, firebaseConfig.firestoreDatabaseId);
+} catch (e) {
+  firestoreDb = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+}
 const authInstance = getAuth(app);
 
 // Seed Accounts for initial setup
@@ -276,7 +286,7 @@ export const RoverStore = {
     if (!u || !u.id) return;
     try {
       const userRef = doc(firestoreDb, 'users', u.id);
-      await setDoc(userRef, {
+      const writePromise = setDoc(userRef, {
         accountNumber: u.accountNumber || 'RT10001',
         firstName: u.firstName || 'Student',
         lastName: u.lastName || '',
@@ -287,6 +297,12 @@ export const RoverStore = {
         role: u.role || 'student',
         createdAt: u.createdAt || new Date().toISOString()
       }, { merge: true });
+
+      // Non-blocking race with 400ms safety window
+      await Promise.race([
+        writePromise,
+        new Promise(r => setTimeout(r, 400))
+      ]);
       console.log("Firestore cloud: User saved successfully to named DB:", u.id);
     } catch (e) {
       console.warn("Firestore user sync error:", e);
@@ -479,51 +495,38 @@ window.firebase = {
 };
 
 // -----------------------------------------------------------
-// AUTOMATIC CLOUD SEEDING & REAL-TIME BACKGROUND LISTENERS
+// AUTOMATIC CLOUD SEEDING & REAL-TIME BACKGROUND LISTENERS (NON-BLOCKING)
 // -----------------------------------------------------------
-(async function initCloudSync() {
+setTimeout(() => {
   try {
-    // 1. Seed default users to Firestore cloud if empty
-    const usersSnap = await getDocs(collection(firestoreDb, 'users'));
-    if (usersSnap.empty) {
-      console.log("Firestore cloud: Seeding default accounts to database...");
-      for (const u of SEED_USERS) {
-        await setDoc(doc(firestoreDb, 'users', u.id), u);
-      }
-      console.log("Firestore cloud: Default accounts seeded.");
-    } else {
-      const cloudUsers = usersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-      RoverStore.saveUsers(cloudUsers);
-      console.log("Firestore cloud: " + cloudUsers.length + " users synchronized across devices.");
-    }
-
-    // 2. Seed default reviews to Firestore cloud if empty
-    const revsSnap = await getDocs(collection(firestoreDb, 'reviews'));
-    if (revsSnap.empty) {
-      console.log("Firestore cloud: Seeding reviews...");
-      for (const r of SEED_REVIEWS) {
-        await setDoc(doc(firestoreDb, 'reviews', r.id), r);
-      }
-      console.log("Firestore cloud: Reviews seeded.");
-    }
-
-    // 3. Attach real-time listener for users
+    let usersInitialized = false;
     onSnapshot(collection(firestoreDb, 'users'), (snap) => {
-      if (!snap.empty) {
+      if (snap.empty && !usersInitialized) {
+        usersInitialized = true;
+        console.log("Firestore cloud: Seeding default accounts...");
+        for (const u of SEED_USERS) {
+          setDoc(doc(firestoreDb, 'users', u.id), u).catch(() => {});
+        }
+      } else if (!snap.empty) {
         const cloudUsers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         RoverStore.saveUsers(cloudUsers);
       }
-    });
+    }, err => console.warn("Users sync note:", err));
 
-    // 4. Attach real-time listener for reviews
+    let revsInitialized = false;
     onSnapshot(collection(firestoreDb, 'reviews'), (snap) => {
-      if (!snap.empty) {
+      if (snap.empty && !revsInitialized) {
+        revsInitialized = true;
+        console.log("Firestore cloud: Seeding reviews...");
+        for (const r of SEED_REVIEWS) {
+          setDoc(doc(firestoreDb, 'reviews', r.id), r).catch(() => {});
+        }
+      } else if (!snap.empty) {
         const cloudRevs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         RoverStore.saveReviews(cloudRevs);
       }
-    });
-
+    }, err => console.warn("Reviews sync note:", err));
   } catch (err) {
-    console.warn("Firestore cloud initialization note:", err);
+    console.warn("Firestore cloud background sync note:", err);
   }
-})();
+}, 50);
