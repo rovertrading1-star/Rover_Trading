@@ -286,11 +286,8 @@
     }
   </style>
 
-  <!-- Firebase Compat SDK -->
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
-  <script src="firebase.js"></script>
+  <!-- Rover Trading Firebase Cloud Service -->
+  <script src="/firebase.js"></script>
 </head>
 <body>
   <div id="toastC"></div>
@@ -523,7 +520,7 @@
 
       // If Firestore is available, update Firestore doc!
       if (typeof db !== 'undefined' && db.collection && id) {
-        db.collection('users').doc(id).update({ paymentStatus: target.paymentStatus }).catch(() => {});
+        db.collection('users').doc(id).set({ paymentStatus: target.paymentStatus }, { merge: true }).catch(() => {});
       }
 
       toast('success', 'Status Updated', `${target.firstName} ${target.lastName} marked as ${target.paymentStatus.toUpperCase()}`);

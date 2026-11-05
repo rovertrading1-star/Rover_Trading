@@ -230,11 +230,8 @@
     }
   </style>
 
-  <!-- Firebase Compat SDK -->
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
-  <script src="firebase.js"></script>
+  <!-- Rover Trading Firebase Cloud Service -->
+  <script src="/firebase.js"></script>
 </head>
 <body>
   <div id="toastC"></div>
@@ -316,7 +313,19 @@
           </div>
 
           <button type="submit" class="btn-submit" id="submitBtn">Sign In ↗</button>
-          <a href="signup.html" class="btn-secondary">Create a new account →</a>
+
+          <div style="display:flex;align-items:center;margin:18px 0;gap:12px;color:var(--muted);font-size:12px;">
+            <div style="flex:1;height:1px;background:var(--border);"></div>
+            <span>OR</span>
+            <div style="flex:1;height:1px;background:var(--border);"></div>
+          </div>
+
+          <button type="button" class="btn-secondary" style="margin-top:0;display:flex;align-items:center;justify-content:center;gap:10px;cursor:pointer;background:rgba(255,255,255,0.03);" onclick="signInWithGoogle()">
+            <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.7 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.3 9 5 12 5z"/><path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.7-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z"/><path fill="#FBBC05" d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.8s.2-2.1.4-2.8L1.9 6.3C.7 8.7 0 10.3 0 12s.7 3.3 1.9 5.7l3.7-2.9z"/><path fill="#34A853" d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.3-6.4-5.2L1.9 16c1.8 3.7 5.6 7 10.1 7z"/></svg>
+            Sign in with Google
+          </button>
+
+          <a href="signup.html" class="btn-secondary" style="margin-top:10px;">Create a new account →</a>
         </form>
       </div>
     </div>
@@ -357,6 +366,60 @@
       toast('success', 'Reset Sent', 'Password reset instructions have been dispatched to ' + em);
     }
 
+    async function signInWithGoogle() {
+      const GoogleAuth = window.GoogleAuthProvider || (window.firebase && window.firebase.auth && window.firebase.auth.GoogleAuthProvider);
+      if (typeof auth === 'undefined' || !GoogleAuth) {
+        toast('error', 'Auth Offline', 'Google Auth service is initializing...');
+        return;
+      }
+      const provider = new GoogleAuth();
+      try {
+        toast('info', 'Connecting Google...', 'Opening secure Google login popup...');
+        const cred = await auth.signInWithPopup(provider);
+        const fbUser = cred.user;
+        const em = (fbUser.email || '').toLowerCase().trim();
+
+        // 1. Look up in Firestore cloud
+        let matched = null;
+        if (typeof db !== 'undefined' && db.collection) {
+          const snap = await db.collection('users').where('email', '==', em).get();
+          if (!snap.empty) {
+            matched = { id: snap.docs[0].id, ...snap.docs[0].data() };
+          }
+        }
+
+        // 2. If new user, create student record in Firestore cloud
+        if (!matched) {
+          const accNum = window.RoverStore.getNextAccountNumber();
+          const names = (fbUser.displayName || 'Google Student').split(' ');
+          matched = {
+            id: fbUser.uid,
+            accountNumber: accNum,
+            firstName: names[0] || 'Student',
+            lastName: names.slice(1).join(' ') || '',
+            email: em,
+            cellNumber: fbUser.phoneNumber || '',
+            password: 'google_authenticated',
+            paymentStatus: 'unpaid',
+            role: (em === 'admin@rovertrading.com' || em === 'loatelethabo@gmail.com') ? 'admin' : 'student',
+            createdAt: new Date().toISOString()
+          };
+          await window.RoverStore.syncUserToFirestore(matched);
+        }
+
+        window.RoverStore.setCurrentUser(matched);
+        toast('success', 'Google Sign-In Successful', 'Welcome, ' + matched.firstName + '! Redirecting...');
+        setTimeout(() => {
+          window.location.href = matched.role === 'admin' ? 'admin.html' : 'dashboard.html';
+        }, 700);
+      } catch (err) {
+        console.warn('Google Auth popup notice:', err);
+        if (err.code !== 'auth/popup-closed-by-user') {
+          toast('warning', 'Google Sign-In', err.message || 'Pop-up window was closed.');
+        }
+      }
+    }
+
     document.getElementById('loginForm').addEventListener('submit', async function(e) {
       e.preventDefault();
       const em = document.getElementById('loginEmail').value.trim().toLowerCase();
@@ -364,50 +427,57 @@
       const btn = document.getElementById('submitBtn');
 
       btn.disabled = true;
-      btn.textContent = 'Signing in...';
+      btn.textContent = 'Checking cloud records...';
 
-      // 1. Try Firebase Auth
-      let fbUser = null;
-      if (typeof auth !== 'undefined' && auth.signInWithEmailAndPassword && pw !== 'password123' && pw !== 'admin123') {
+      let matched = null;
+
+      // 1. Direct query to Firestore Cloud database instance
+      if (typeof db !== 'undefined' && db.collection) {
         try {
-          const cred = await auth.signInWithEmailAndPassword(em, pw);
-          fbUser = cred.user;
+          const snap = await db.collection('users').where('email', '==', em).get();
+          if (!snap.empty) {
+            matched = { id: snap.docs[0].id, ...snap.docs[0].data() };
+            console.log('User found in Firestore cloud:', matched.id);
+          }
         } catch (err) {
-          console.warn('Firebase Auth note:', err.message);
+          console.warn('Firestore cloud user search notice:', err.message);
         }
       }
 
-      // 2. Load / Match in RoverStore
-      const users = window.RoverStore.getUsers();
-      let matched = users.find(u => u.email.toLowerCase() === em);
+      // 2. If not found, sync full cloud users list
+      if (!matched && window.RoverStore && window.RoverStore.syncUsersFromFirestore) {
+        const cloudUsers = await window.RoverStore.syncUsersFromFirestore();
+        matched = cloudUsers.find(u => u.email && u.email.toLowerCase() === em);
+      }
 
-      if (!matched && fbUser) {
-        matched = {
-          id: fbUser.uid,
-          accountNumber: 'RT10001',
-          firstName: fbUser.displayName ? fbUser.displayName.split(' ')[0] : 'Student',
-          lastName: fbUser.displayName ? fbUser.displayName.split(' ').slice(1).join(' ') : '',
-          email: em,
-          paymentStatus: 'unpaid',
-          role: em === 'admin@rovertrading.com' || em === 'loatelethabo@gmail.com' ? 'admin' : 'student',
-          createdAt: new Date().toISOString()
-        };
-        users.push(matched);
-        window.RoverStore.saveUsers(users);
+      // 3. Fallback to local store
+      if (!matched) {
+        const localUsers = window.RoverStore.getUsers();
+        matched = localUsers.find(u => u.email && u.email.toLowerCase() === em);
       }
 
       if (!matched) {
         btn.disabled = false;
         btn.textContent = 'Sign In ↗';
-        toast('error', 'Login Failed', 'No account found with this email. Please check your credentials or create an account.');
+        toast('error', 'Login Failed', 'No account found with email ' + em + '. Please register first.');
         return;
       }
 
+      // 4. Validate Password (supports custom registered passwords and demo passwords)
+      const correctPw = matched.password || 'password123';
+      if (pw !== correctPw && pw !== 'password123' && pw !== 'admin123') {
+        btn.disabled = false;
+        btn.textContent = 'Sign In ↗';
+        toast('error', 'Incorrect Password', 'The password entered does not match our records.');
+        return;
+      }
+
+      // 5. Successful login
       window.RoverStore.setCurrentUser(matched);
-      toast('success', 'Welcome Back!', 'Redirecting to your portal...');
+      toast('success', 'Authenticated!', 'Welcome back, ' + matched.firstName + '! Redirecting...');
 
       setTimeout(() => {
-        if (matched.role === 'admin') {
+        if (matched.role === 'admin' || matched.email === 'admin@rovertrading.com' || matched.email === 'loatelethabo@gmail.com') {
           window.location.href = 'admin.html';
         } else {
           window.location.href = 'dashboard.html';

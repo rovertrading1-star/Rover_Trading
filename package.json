@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 3000",
-    "build": "tsc && vite build",
+    "bundle:firebase": "esbuild src/firebase.js --bundle --format=iife --outfile=public/firebase.js && cp public/firebase.js firebase.js",
+    "build": "npm run bundle:firebase && tsc && vite build",
     "preview": "vite preview --port 3000",
     "lint": "tsc --noEmit"
   },

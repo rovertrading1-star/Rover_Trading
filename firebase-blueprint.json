@@ -40,6 +40,11 @@
           "description": "User permission role",
           "enum": ["student", "admin"]
         },
+        "password": {
+          "type": "string",
+          "description": "User credential password for cross-device authentication",
+          "maxLength": 128
+        },
         "createdAt": {
           "type": "string",
           "description": "ISO timestamp or server timestamp when account was created"

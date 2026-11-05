@@ -264,11 +264,8 @@
     }
   </style>
 
-  <!-- Firebase Compat SDK -->
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
-  <script src="firebase.js"></script>
+  <!-- Rover Trading Firebase Cloud Service -->
+  <script src="/firebase.js"></script>
 </head>
 <body>
   <div id="toastC"></div>
@@ -524,16 +521,41 @@
     renderUser(currentUser);
 
     // Live Firestore real-time listener if available!
-    if (typeof db !== 'undefined' && db.collection && currentUser && currentUser.id) {
-      db.collection('users').doc(currentUser.id).onSnapshot(doc => {
+    function listenToUser(u) {
+      if (!u || !u.id || typeof db === 'undefined' || !db.collection) return;
+      db.collection('users').doc(u.id).onSnapshot(doc => {
         if (doc && doc.exists) {
           const d = doc.data();
-          currentUser.paymentStatus = d.paymentStatus || currentUser.paymentStatus;
-          currentUser.accountNumber = d.accountNumber || currentUser.accountNumber;
+          currentUser = { ...currentUser, ...d, id: doc.id };
           window.RoverStore.setCurrentUser(currentUser);
           renderUser(currentUser);
         }
-      }, err => console.warn('Firestore snapshot note:', err));
+      }, err => console.warn('Firestore user snapshot note:', err));
+    }
+
+    if (currentUser && currentUser.id) {
+      listenToUser(currentUser);
+    }
+
+    // Auth state changed listener
+    if (typeof auth !== 'undefined' && auth.onAuthStateChanged) {
+      auth.onAuthStateChanged(async fbUser => {
+        if (fbUser) {
+          const em = (fbUser.email || '').toLowerCase();
+          if (typeof db !== 'undefined' && db.collection) {
+            try {
+              const snap = await db.collection('users').where('email', '==', em).get();
+              if (!snap.empty) {
+                const liveUser = { id: snap.docs[0].id, ...snap.docs[0].data() };
+                currentUser = liveUser;
+                window.RoverStore.setCurrentUser(liveUser);
+                renderUser(liveUser);
+                listenToUser(liveUser);
+              }
+            } catch (e) {}
+          }
+        }
+      });
     }
   </script>
 </body>

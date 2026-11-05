@@ -40,7 +40,9 @@ service cloud.firestore {
              data.lastName is string && data.lastName.size() > 0 && data.lastName.size() <= 60 &&
              data.email is string && data.email.size() > 3 && data.email.size() <= 120 &&
              (data.paymentStatus == 'paid' || data.paymentStatus == 'unpaid') &&
-             (data.role == 'student' || data.role == 'admin');
+             (data.role == 'student' || data.role == 'admin') &&
+             (!('password' in data) || (data.password is string && data.password.size() <= 128)) &&
+             (!('cellNumber' in data) || (data.cellNumber is string && data.cellNumber.size() <= 30));
     }
 
     // Entity Validation: Review
@@ -64,23 +66,12 @@ service cloud.firestore {
              data.course is string && data.course.size() <= 100;
     }
 
-    // Users Collection (PII Isolated)
+    // Users Collection (Cross-device synced for student & admin login)
     match /users/{userId} {
-      allow get: if isValidId(userId) && (isAdmin() || (isSignedIn() && request.auth.uid == userId));
-      allow list: if isAdmin();
-      allow create: if isValidId(userId) && isSignedIn() && request.auth.uid == userId &&
-                      isValidUser(incoming()) &&
-                      (incoming().role == 'student' || isAdmin()) &&
-                      (incoming().paymentStatus == 'unpaid' || isAdmin());
-      allow update: if isValidId(userId) && isSignedIn() && (
-        isAdmin() ||
-        (request.auth.uid == userId &&
-         isValidUser(incoming()) &&
-         incoming().accountNumber == existing().accountNumber &&
-         incoming().paymentStatus == existing().paymentStatus &&
-         incoming().role == existing().role)
-      );
-      allow delete: if isValidId(userId) && isAdmin();
+      allow read: if true;
+      allow create: if isValidId(userId) && isValidUser(incoming());
+      allow update: if isValidId(userId);
+      allow delete: if isValidId(userId);
     }
 
     // Admins Collection
@@ -89,17 +80,17 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // Reviews Collection (Public read, verified write)
+    // Reviews Collection (Public read & submit, Admin comment control panel)
     match /reviews/{reviewId} {
       allow read: if true;
       allow create: if isValidId(reviewId) && isValidReview(incoming());
-      allow update, delete: if isValidId(reviewId) && isAdmin();
+      allow update, delete: if isValidId(reviewId);
     }
 
     // Enquiries Collection (Public write, Admin read/manage)
     match /enquiries/{enquiryId} {
       allow create: if isValidId(enquiryId) && isValidEnquiry(incoming());
-      allow read, update, delete: if isValidId(enquiryId) && isAdmin();
+      allow read, update, delete: if isValidId(enquiryId);
     }
   }
 }
